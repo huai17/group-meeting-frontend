@@ -18,18 +18,24 @@ const App = () => {
         <video autoPlay width="640px" height="480px" ref={video} />
       </div>
       <div>
-        <div onClick={() => createRoom()}>Create</div>
-        {room.id ? (
-          <div onClick={() => releaseRoom(room.id)}>Release</div>
-        ) : null}
         Token:
         <input value={token} onChange={(e) => setToken(e.target.value)} />
         Name:
         <input value={name} onChange={(e) => setName(e.target.value)} />
         <div onClick={() => joinRoom({ token, name })}>Join Room</div>
-        <div onClick={() => leaveRoom()}>Stop</div>
+        <div onClick={() => leaveRoom()}>Leave Room</div>
+        <br />
+        <br />
+        <br />
+        <br />
+        {room.id ? (
+          <div onClick={() => releaseRoom(room.id)}>Release Room</div>
+        ) : (
+          <div onClick={() => createRoom()}>Create Room</div>
+        )}
         Room: {room.id}
-        Tokens:
+        <br />
+        Tokens: <br />
         {Object.keys(room.tokens).map((token) =>
           token === "length" ? null : <div key={token}>{token}</div>
         )}
