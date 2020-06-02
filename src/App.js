@@ -1,16 +1,19 @@
 import React, { useRef, useState } from "react";
 
 import { useWebrtc } from "./utils/groupCall";
-import { RoomProvider, useRoom } from "./hooks/roomHooks";
+import { RoomsProvider, useRooms } from "./hooks/roomsHooks";
+
+import server from "./configs/server";
 
 const App = () => {
   const video = useRef(null);
-  const [joinRoom, leaveRoom, createRoom, releaseRoom] = useWebrtc({
+  const { joinRoom, leaveRoom, createRoom, releaseRoom, getRooms } = useWebrtc({
     videoRef: video,
+    url: server(),
   });
   const [name, setName] = useState("");
   const [token, setToken] = useState("");
-  const [room] = useRoom();
+  const [rooms] = useRooms();
 
   return (
     <div>
@@ -28,28 +31,31 @@ const App = () => {
         <br />
         <br />
         <br />
-        {room.id ? (
-          <div onClick={() => releaseRoom(room.id)}>Release Room</div>
-        ) : (
-          <div onClick={() => createRoom()}>Create Room</div>
-        )}
-        Room: {room.id}
+        <div onClick={() => createRoom()}>Create Room</div>
         <br />
-        Tokens: <br />
-        {Object.keys(room.tokens).map((token) =>
-          token === "length" ? null : <div key={token}>{token}</div>
-        )}
+        <div onClick={() => getRooms()}>Get Rooms</div>
+        {rooms.map((room) => (
+          <div key={room.id}>
+            Room: {room.id}
+            <br />
+            Tokens: <br />
+            {Object.keys(room.tokens).map((token) =>
+              token === "length" ? null : <div key={token}>{token}</div>
+            )}
+            <div onClick={() => releaseRoom(room.id)}>Release Room</div>
+          </div>
+        ))}
       </div>
     </div>
   );
 };
 
 export default () => {
-  const [room, setRoom] = useState({ id: "", tokens: {} });
+  const [rooms, setRooms] = useState([]);
 
   return (
-    <RoomProvider room={room} setRoom={setRoom}>
+    <RoomsProvider rooms={rooms} setRooms={setRooms}>
       <App />
-    </RoomProvider>
+    </RoomsProvider>
   );
 };

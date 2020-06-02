@@ -1,13 +1,13 @@
 import { useRef, useEffect } from "react";
 import io from "socket.io-client";
 import kurentoUtils from "kurento-utils";
-import { useRoom } from "../hooks/roomHooks";
+import { useRooms } from "../hooks/roomsHooks";
 
 export const useWebrtc = ({ videoRef, url = "http://localhost:5000" }) => {
   const webRtcPeer = useRef(null);
   const socket = useRef(null);
 
-  const [, setRoom] = useRoom();
+  const [, setRooms] = useRooms();
 
   useEffect(() => {
     socket.current = io(`${url}`);
@@ -15,6 +15,10 @@ export const useWebrtc = ({ videoRef, url = "http://localhost:5000" }) => {
       console.log(`Receive message: ${message.id}`);
 
       switch (message.id) {
+        case "getRoomsResponse":
+          getRoomsResponse(message);
+          break;
+
         case "createRoomResponse":
           createRoomResponse(message);
           break;
@@ -45,28 +49,37 @@ export const useWebrtc = ({ videoRef, url = "http://localhost:5000" }) => {
     });
   }, []);
 
+  const getRoomsResponse = (message) => {
+    if (message.response !== "success") {
+      const error = message.error ? message.error : "Unknow error";
+      console.info(`Create room failed for the following reason: `, error);
+    } else {
+      setRooms(message.rooms);
+    }
+  };
+
   const createRoomResponse = (message) => {
     if (message.response !== "success") {
       const error = message.error ? message.error : "Unknow error";
-      console.info(`Create room failed for the following reason: ${error}`);
-    } else {
-      setRoom(message.room);
+      console.info(`Create room failed for the following reason: `, error);
     }
+
+    sendMessage({ id: "getRooms" });
   };
 
   const releaseRoomResponse = (message) => {
     if (message.response !== "success") {
       const error = message.error ? message.error : "Unknow error";
-      console.info(`Release room failed for the following reason: ${error}`);
-    } else {
-      setRoom({ id: "", tokens: {} });
+      console.info(`Release room failed for the following reason: `, error);
     }
+
+    sendMessage({ id: "getRooms" });
   };
 
   const joinRoomResponse = (message) => {
     if (message.response !== "success") {
       const error = message.error ? message.error : "Unknow error";
-      console.info(`Join room failed for the following reason: ${error}`);
+      console.info(`Join room failed for the following reason: `, error);
       dispose();
     } else {
       webRtcPeer.current.processAnswer(message.sdpAnswer);
@@ -76,7 +89,7 @@ export const useWebrtc = ({ videoRef, url = "http://localhost:5000" }) => {
   const leaveRoomResponse = (message) => {
     if (message.response !== "success") {
       const error = message.error ? message.error : "Unknow error";
-      console.info(`Leave room failed for the following reason: ${error}`);
+      console.info(`Leave room failed for the following reason: `, error);
     } else {
       console.info(`Leave room`);
     }
@@ -124,6 +137,10 @@ export const useWebrtc = ({ videoRef, url = "http://localhost:5000" }) => {
     socket.current.send(message);
   };
 
+  const getRooms = () => {
+    sendMessage({ id: "getRooms" });
+  };
+
   const createRoom = () => {
     sendMessage({ id: "createRoom" });
   };
@@ -132,5 +149,5 @@ export const useWebrtc = ({ videoRef, url = "http://localhost:5000" }) => {
     sendMessage({ id: "releaseRoom", roomId });
   };
 
-  return [joinRoom, leaveRoom, createRoom, releaseRoom];
+  return { joinRoom, leaveRoom, createRoom, releaseRoom, getRooms };
 };
